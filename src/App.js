@@ -5,14 +5,12 @@ import 'react-calendar/dist/Calendar.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 
-
-
 function App() {
   const [date, setDate] = useState(new Date());
 
   return (
     <div className='app'>
-      <h1 className='text-center'>React Calendar</h1>
+      <h1 className='text-center'>React Calendar UCP</h1>
       <div className='calendar-container ' align="center">
         <Calendar onChange={setDate} value={date} />
       </div>
