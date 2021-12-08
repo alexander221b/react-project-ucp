@@ -1,56 +1,56 @@
-version: 2.1
-
-jobs:
-  build:
-    machine:
-      image: ubuntu-2004:202010-01
-    steps:
-      - checkout
-      - run: npm install
+version: 2.0 # use CircleCI 2.1
+jobs: # a collection of steps
+  build: # runs not using Workflows must have a `build` job as entry point
+    working_directory: ~/ucp # directory where steps will run
+    docker: # run the steps with Docker
+      - image: circleci/node:14.17.0 # ...with this image as the primary container; this is where all `steps` will run
+    steps: # a collection of executable commands
+      - checkout # special step to check out source code to working directory
       - run:
-          name: build
+          name: update-npm
+          command: 'sudo npm install -g npm@latest'
+      - restore_cache: # special step to restore the dependency cache
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          key: dependency-cache-{{ checksum "package-lock.json" }}
+      - run:
+          name: Check npm and node version
           command: |
-            if [ $CIRCLE_BRANCH = 'main' ]; then
-              npm run build --prod
-            fi
-      - persist_to_workspace:
-          root: .
+            node --version
+            npm --version
+      - run:
+          name: install-npm
+          command: npm install
+      - save_cache: # special step to save the dependency cache
+          key: dependency-cache-{{ checksum "package-lock.json" }}
           paths:
-            - .
-  test:
-    machine:
-      image: ubuntu-2004:202010-01
-    steps:
-      - attach_workspace:
-          at: .
-      - checkout
-      #- run: cd ./app && npm run test
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
-  deploy:
-    machine:
-        image: ubuntu-2004:202010-01
-    steps:
-      - attach_workspace:
-          at: .
-      - checkout
-      - run: aws s3 sync ./dist/ListaCheck s3://catalago-aws-app
+            - ./node_modules
+      - run: # run tests
+          name: test
+          command: npm test
+      # - run: 
+      #     name: audit
+      #     command: npm audit
+      
+    
+      - setup_remote_docker:
+          version: 19.03.13
 
-
+      - run:
+          name: Build test container
+          command: |
+            docker build -t "ucp:${CIRCLE_BUILD_NUM}" .
 workflows:
-  build_and_deploy:
+  version: 2
+  commit:
     jobs:
-      - build:
+      - build
+  nightly:
+    triggers:
+      - schedule:
+          cron: "21 22 * * * "
           filters:
             branches:
               only:
-                - main
-      - deploy:
-          requires:
-            - build
-          filters:
-            branches:
-              only:
-                - main
+                - master
+    jobs:
+      - build
