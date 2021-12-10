@@ -10,7 +10,7 @@ function App() {
 
   return (
     <div className='app'>
-      <h1 className='text-center ' Style="color:red">React Calendar UCP</h1>
+      <h1 className='text-center ' Style="color:green">React Calendar UCP</h1>
       <div className='calendar-container ' align="center">
         <Calendar onChange={setDate} value={date} />
       </div>
